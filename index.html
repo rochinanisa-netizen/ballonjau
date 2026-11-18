@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>BALLOON POP – Pecahkan Balon Pintar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--ink:#1e3a5f;--blue:#2f8cf0;--green:#18b36b;--orange:#ff8a1a;--pink:#ff4fa3;--yellow:#ffd04d}
+html,body{margin:0;height:100%;overflow:hidden;font-family:"Fredoka","Comic Sans MS","Trebuchet MS",sans-serif;color:var(--ink);background:#7fd3ff}
+button{font-family:inherit;cursor:pointer}
+/* ===== BACKGROUND ===== */
+.bg{position:fixed;inset:0;z-index:0;background:linear-gradient(#4cc3ff 0%,#9be3ff 55%,#e6fbff 100%);overflow:hidden}
+.sun{position:absolute;right:6%;top:12%;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,#fff6a8 0,#ffe45c 55%,#ffc928 100%);box-shadow:0 0 0 18px rgba(255,235,120,.28),0 0 0 40px rgba(255,235,120,.15);animation:sunp 5s ease-in-out infinite}
+@keyframes sunp{50%{transform:scale(1.06)}}
+.cloud{position:absolute;left:-260px;width:200px;height:60px;background:#fff;border-radius:60px;opacity:.95;animation:drift linear infinite;filter:drop-shadow(0 6px 6px rgba(0,90,160,.12))}
+.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:90px;height:90px;left:25px;top:-45px}
+.cloud::after{width:70px;height:70px;left:95px;top:-30px}
+@keyframes drift{to{transform:translateX(calc(100vw + 560px))}}
+.hill{position:absolute;bottom:-70px;border-radius:50%}
+.h1{left:-10%;width:70%;height:190px;background:#5fd36e}
+.h2{right:-12%;width:75%;height:160px;background:#3fbf5a}
+.spark{position:absolute;bottom:-20px;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.8);animation:rise linear infinite}
+@keyframes rise{to{transform:translateY(-110vh) scale(.4);opacity:0}}
+#fx{position:fixed;inset:0;z-index:45;pointer-events:none}
+/* ===== NAVBAR ===== */
+#nav{position:fixed;top:0;left:0;right:0;height:58px;z-index:30;display:none;align-items:center;gap:8px;padding:0 14px;background:rgba(255,255,255,.88);backdrop-filter:blur(6px);border-radius:0 0 22px 22px;box-shadow:0 6px 18px rgba(0,80,150,.18)}
+#nav.show{display:flex}
+.brand{font-weight:700;font-size:20px;margin-right:auto;white-space:nowrap}
+.chip{background:#eaf6ff;border:2px solid #bfe3ff;border-radius:999px;padding:4px 12px;font-weight:600;font-size:15px;white-space:nowrap}
+.chip b{font-weight:700}
+#chipTime.low{background:#ffe3e3;border-color:#ff9c9c;color:#c01e1e;animation:blink .6s infinite}
+@keyframes blink{50%{transform:scale(1.08)}}
+.icon{width:40px;height:40px;border-radius:50%;border:2px solid #bfe3ff;background:#fff;font-size:20px}
+/* ===== SCREENS ===== */
+.screen{position:fixed;inset:0;z-index:5;display:none;flex-direction:column;padding-top:64px}
+.screen.active{display:flex}
+.center{align-items:center;justify-content:center;padding:16px;overflow:auto}
+.card{background:#fff;border-radius:30px;border:4px solid #fff;box-shadow:0 14px 40px rgba(0,70,140,.28);padding:26px 28px;max-width:560px;width:100%;text-align:center}
+#sStart,#sEnd{padding-top:16px}
+.title{font-size:clamp(34px,7vw,56px);font-weight:700;line-height:1;margin:0;background:linear-gradient(90deg,#ff4f6d,#ff8a1a,#f2b600,#18b36b,#2f8cf0,#8a4be8);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 rgba(0,0,0,.08))}
+.sub{font-size:clamp(18px,3.6vw,24px);font-weight:600;margin:6px 0 10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px}
+.tag{background:#fff3c4;border:2px solid #ffd96b;border-radius:999px;padding:3px 12px;font-size:14px;font-weight:600}
+.field{width:100%;font:600 20px "Fredoka",sans-serif;text-align:center;padding:12px 16px;border-radius:18px;border:3px solid #bfe3ff;outline:none;color:var(--ink)}
+.field:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(47,140,240,.2)}
+.field.err{border-color:#ff5a5a;animation:shake .4s}
+.btn{display:block;width:100%;margin-top:10px;padding:13px 18px;border-radius:18px;border:0;font-size:19px;font-weight:700;color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.18);transition:transform .1s,box-shadow .1s}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.btn.green{background:linear-gradient(#35d98a,#18b36b)}
+.btn.blue{background:linear-gradient(#5ab0ff,#2f8cf0)}
+.btn.orange{background:linear-gradient(#ffac4d,#ff7a1a)}
+.btn.grey{background:linear-gradient(#a9b6c6,#8696aa)}
+.how{display:flex;gap:8px;margin-top:16px;text-align:center}
+.how div{flex:1;background:#f1f9ff;border-radius:16px;padding:8px 4px;font-size:13px;font-weight:500}
+.how span{display:block;font-size:26px}
+.small{font-size:13px;opacity:.75;margin-top:10px}
+/* ===== GAME ===== */
+#sGame{padding-top:64px}
+.topinfo{padding:0 16px}
+.progress{height:16px;background:rgba(255,255,255,.7);border-radius:999px;overflow:hidden;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,80,150,.15)}
+#pbar{height:100%;width:0;background:linear-gradient(90deg,#35d98a,#ffd04d,#ff8a1a);border-radius:999px;transition:width .6s}
+.pinfo{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;margin-top:3px}
+.dots{display:flex;gap:5px}
+.dot{width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #bfe3ff}
+.dot.done{background:#35d98a;border-color:#18b36b}
+.dot.cur{background:#ffd04d;border-color:#f0a000;transform:scale(1.25)}
+.qcard{margin:8px 16px 0;background:#fff;border-radius:24px;padding:12px 18px 14px;box-shadow:0 8px 24px rgba(0,70,140,.22);border:3px solid #fff;text-align:center}
+.qmeta{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;font-size:13px;font-weight:600}
+.badge{padding:2px 12px;border-radius:999px;color:#fff;font-weight:700;letter-spacing:.5px}
+.badge.LOTS{background:#18b36b}.badge.MOTS{background:#ff8a1a}.badge.HOTS{background:#d6336c}
+#qText{margin:6px 0 8px;font-size:clamp(18px,3.4vw,28px);font-weight:600;line-height:1.25}
+.tbar{height:9px;background:#e4f3ff;border-radius:999px;overflow:hidden}
+#tfill{display:block;height:100%;width:100%;background:linear-gradient(90deg,#35d98a,#ffd04d);border-radius:999px}
+#tfill.low{background:linear-gradient(90deg,#ff8a1a,#ff3b3b)}
+.fb{min-height:40px;margin:8px 16px 0;padding:6px 14px;border-radius:16px;font-weight:600;font-size:clamp(14px,2.4vw,18px);text-align:center;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .25s}
+.fb.show{opacity:1}
+.fb.good{background:#d8f8e4;border:2px solid #35d98a;color:#0b6b3f}
+.fb.bad{background:#ffe4e4;border:2px solid #ff8a8a;color:#a31d1d}
+.fb.info{background:#fff3c4;border:2px solid #ffd96b;color:#7a5200}
+#stage{position:relative;flex:1;overflow:hidden;margin-bottom:40px;min-height:160px}
+body.cam #stage{margin-bottom:122px}
+#hint{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:20;background:rgba(255,255,255,.85);border-radius:999px;padding:4px 16px;font-size:13px;font-weight:600;pointer-events:none;white-space:nowrap}
+body.cam #hint{left:auto;right:12px;transform:none;bottom:70px;white-space:normal;max-width:50vw;text-align:center;border-radius:16px}
+/* ===== BALLOON ===== */
+.balloon{position:absolute;left:0;top:0;will-change:transform;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.balloon .body{position:relative;width:100%;height:100%;border-radius:50% 50% 48% 48%/58% 58% 42% 42%;
+ background:radial-gradient(ellipse at 30% 24%,rgba(255,255,255,.95) 0,rgba(255,255,255,.4) 9%,transparent 24%),radial-gradient(circle at 38% 34%,var(--c1),var(--c2) 62%,var(--c3));
+ box-shadow:inset -12px -16px 26px rgba(0,0,0,.2),inset 8px 8px 16px rgba(255,255,255,.28),0 12px 20px rgba(0,60,120,.2);
+ display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font-weight:700;padding:11% 12% 17%;line-height:1.15;text-shadow:0 2px 3px rgba(0,0,0,.4);transition:transform .15s,filter .2s}
+.balloon .body::after{content:"";position:absolute;right:16%;top:16%;width:10%;height:16%;border-radius:50%;background:rgba(255,255,255,.35);transform:rotate(30deg)}
+.balloon .knot{position:absolute;left:50%;bottom:-8px;width:16px;height:14px;background:var(--c3);transform:translateX(-50%);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.balloon .string{position:absolute;left:50%;top:calc(100% + 4px);width:2px;height:60px;background:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.1));transform-origin:top;animation:sway 2.2s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.balloon:hover .body,.balloon.hover .body{transform:scale(1.08);filter:brightness(1.1) drop-shadow(0 0 10px #fff)}
+.balloon.hover .body{outline:5px solid rgba(255,255,255,.9);outline-offset:3px}
+.balloon.dead{pointer-events:none}
+.balloon.dead .body{filter:grayscale(1) brightness(.85);opacity:.5;animation:shake .5s;transform:scale(.92)}
+.balloon.dead .body::before{content:"✗";position:absolute;top:-8px;right:-4px;width:34px;height:34px;border-radius:50%;background:#ff4d4d;color:#fff;font-size:22px;line-height:34px;text-shadow:none}
+.balloon.reveal .body{animation:glow .7s infinite alternate}
+@keyframes glow{to{box-shadow:0 0 0 8px rgba(255,255,255,.9),0 0 36px 12px #ffe45c;transform:scale(1.08)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+.ring{position:fixed;z-index:44;width:20px;height:20px;border-radius:50%;border:6px solid;pointer-events:none;transform:translate(-50%,-50%);animation:ring .55s ease-out forwards}
+@keyframes ring{to{width:210px;height:210px;opacity:0;border-width:1px}}
+.floatpts{position:fixed;z-index:46;pointer-events:none;font-weight:700;font-size:34px;text-shadow:0 3px 0 #fff,0 0 12px #fff;transform:translate(-50%,-50%);animation:fup 1.2s ease-out forwards}
+@keyframes fup{to{transform:translate(-50%,-150px);opacity:0}}
+/* ===== OVERLAY ===== */
+.ov{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(20,70,140,.38);padding:16px}
+.ov.show{display:flex}
+.ov .card{animation:pop .4s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.5);opacity:0}}
+.bigtxt{font-size:clamp(38px,9vw,64px);font-weight:700;margin:0;color:var(--orange)}
+.stars{font-size:48px;letter-spacing:4px;margin:6px 0}
+.stars .off{filter:grayscale(1);opacity:.35}
+/* ===== END ===== */
+#sEnd .card{max-width:640px}
+.trophy{font-size:72px;animation:bounce 1.2s infinite}
+@keyframes bounce{50%{transform:translateY(-12px)}}
+.scorebig{font-size:56px;font-weight:700;color:var(--green);line-height:1}
+.stats{display:flex;gap:8px;margin:12px 0}
+.stat{flex:1;background:#f1f9ff;border-radius:16px;padding:8px;font-size:14px;font-weight:600}
+.stat b{display:block;font-size:24px}
+.msg{font-size:18px;font-weight:600;margin:8px 0}
+.recap{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+.recap span{background:#e9fff2;border:2px solid #9be8bd;border-radius:12px;padding:3px 10px;font-size:13px;font-weight:600}
+/* ===== CAMERA / HAND ===== */
+#camBox{position:fixed;left:12px;bottom:10px;z-index:60;display:none;width:170px;border-radius:18px;overflow:hidden;border:4px solid #fff;box-shadow:0 8px 20px rgba(0,60,120,.35);background:#123}
+#camBox.show{display:block}
+.mirror{position:relative;transform:scaleX(-1);width:100%;aspect-ratio:4/3}
+#cam,#camDots{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#camStatus{font-size:11px;font-weight:600;text-align:center;background:#fff;padding:2px 4px}
+#hand{position:fixed;left:0;top:0;z-index:70;width:58px;height:58px;border-radius:50%;pointer-events:none;display:none;align-items:center;justify-content:center;font-size:30px;background:rgba(255,255,255,.55);border:4px solid #ff4fa3;box-shadow:0 0 0 4px rgba(255,255,255,.8),0 6px 14px rgba(0,0,0,.25);transition:background .1s,border-color .1s}
+#hand.pinch{background:rgba(255,79,163,.85);border-color:#fff;transform-origin:center}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:90;background:#ff5a5a;color:#fff;font-weight:600;padding:8px 18px;border-radius:999px;display:none;max-width:90vw;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+#toast.show{display:block;animation:pop .3s}
+@media(max-width:700px){
+ .brand span{display:none}
+ .chip{padding:3px 8px;font-size:13px}
+ #nav{gap:5px;padding:0 8px}
+ #camBox{width:118px}
+ body.cam #stage{margin-bottom:100px}
+ body.cam #hint{bottom:44px;max-width:56vw;font-size:11px}
+ .sun{width:70px;height:70px}
+ .card{padding:20px 16px}
+ .qcard{padding:8px 12px 10px}
+}
+</style>
+</head>
+<body>
+
+<div class="bg" id="bg">
+  <div class="sun"></div>
+  <div class="cloud" style="top:9%;animation-duration:70s;animation-delay:-20s"></div>
+  <div class="cloud" style="top:22%;transform:scale(.7);animation-duration:95s;animation-delay:-60s"></div>
+  <div class="cloud" style="top:38%;transform:scale(1.2);animation-duration:120s;animation-delay:-5s"></div>
+  <div class="cloud" style="top:55%;transform:scale(.55);animation-duration:80s;animation-delay:-40s"></div>
+  <div class="hill h1"></div><div class="hill h2"></div>
+</div>
+<canvas id="fx"></canvas>
+
+<header id="nav">
+  <div class="brand">🎈 <span>Balloon Pop</span></div>
+  <div class="chip">🧒 <b id="nName">-</b></div>
+  <div class="chip">🏁 <b id="nLevel">1</b>/5</div>
+  <div class="chip">⭐ <b id="nScore">0</b></div>
+  <div class="chip" id="chipTime">⏱ <b id="nTime">--</b></div>
+  <button class="icon" id="btnSound" title="Suara hidup/mati" aria-label="Suara">🔊</button>
+</header>
+
+<!-- ===== START ===== -->
+<section id="sStart" class="screen center active">
+  <div class="card">
+    <h1 class="title">BALLOON POP</h1>
+    <div class="sub">🎈 Pecahkan Balon Pintar 🎈</div>
+    <div class="tags"><span class="tag">📖 Akidah Akhlak</span><span class="tag">✨ Asmaul Husna</span><span class="tag">🏫 Kelas 1</span></div>
+    <input id="inName" class="field" type="text" maxlength="20" placeholder="Tulis namamu di sini…" autocomplete="off">
+    <button class="btn green" id="btnCam">📷 Main dengan Gerakan Tangan</button>
+    <button class="btn blue" id="btnMouse">🖱️ Main dengan Mouse / Sentuh</button>
+    <div class="how">
+      <div><span>☝️</span>Arahkan jarimu ke balon</div>
+      <div><span>🤏</span>Cubit jempol &amp; telunjuk</div>
+      <div><span>🎈</span>Balon jawaban benar pecah!</div>
+    </div>
+    <div class="small">5 level • tiap level 3 soal • kamera hanya menyala setelah kamu mengizinkan</div>
+  </div>
+</section>
+
+<!-- ===== GAME ===== -->
+<section id="sGame" class="screen">
+  <div class="topinfo">
+    <div class="progress"><div id="pbar"></div></div>
+    <div class="pinfo"><span id="pText">Soal 1 dari 15</span><span class="dots" id="dots"></span></div>
+  </div>
+  <div class="qcard">
+    <div class="qmeta"><span class="badge LOTS" id="qBadge">LOTS</span><span id="qNum"></span><span id="qTopic"></span></div>
+    <h2 id="qText"></h2>
+    <div class="tbar"><i id="tfill"></i></div>
+  </div>
+  <div class="fb" id="fb"></div>
+  <div id="stage"></div>
+</section>
+<div id="hint"></div>
+
+<!-- ===== END ===== -->
+<section id="sEnd" class="screen center">
+  <div class="card">
+    <div class="trophy">🏆</div>
+    <h1 class="title" style="font-size:clamp(28px,6vw,44px)" id="endTitle">Selamat!</h1>
+    <div class="stars" id="endStars"></div>
+    <div class="scorebig" id="endScore">0</div>
+    <div style="font-weight:600">Total Skor</div>
+    <div class="stats">
+      <div class="stat"><b id="endFirst">0</b>Benar sekali jalan</div>
+      <div class="stat"><b id="endLv">5</b>Level selesai</div>
+      <div class="stat"><b id="endBest">0</b>Skor terbaik</div>
+    </div>
+    <div class="msg" id="endMsg"></div>
+    <div style="font-weight:600;font-size:14px">Asmaul Husna yang sudah kamu pelajari:</div>
+    <div class="recap" id="recap"></div>
+    <button class="btn green" id="btnAgain">🔄 Main Lagi</button>
+    <button class="btn grey" id="btnChange">👤 Ganti Pemain</button>
+  </div>
+</section>
+
+<!-- ===== OVERLAYS ===== -->
+<div class="ov" id="ovBanner"><div class="card">
+  <div class="bigtxt" id="bnLevel">LEVEL 1</div>
+  <div class="sub" id="bnTitle"></div>
+  <div style="font-size:42px">🎈🎈🎈</div>
+  <div style="font-weight:600">Siap-siap ya!</div>
+</div></div>
+
+<div class="ov" id="ovLevel"><div class="card">
+  <div class="bigtxt" id="lvTitle">Level 1 Selesai!</div>
+  <div class="stars" id="lvStars"></div>
+  <div class="msg" id="lvMsg"></div>
+  <button class="btn green" id="btnNext">Lanjut ke Level 2 ➜</button>
+</div></div>
+
+<div class="ov" id="ovConsent"><div class="card">
+  <div style="font-size:54px">📷</div>
+  <h2 style="margin:4px 0">Izinkan Kamera?</h2>
+  <p style="font-weight:500;margin:6px 0">Game ini memakai kamera untuk melihat gerakan tanganmu. Video <b>tidak direkam</b> dan <b>tidak dikirim</b> ke mana pun. Kamu bisa menolak dan tetap bermain dengan mouse atau layar sentuh.</p>
+  <button class="btn green" id="btnAllow">✅ Izinkan Kamera</button>
+  <button class="btn grey" id="btnDeny">Tidak, pakai Mouse / Sentuh</button>
+</div></div>
+
+<div id="camBox">
+  <div class="mirror"><video id="cam" playsinline muted></video><canvas id="camDots" width="160" height="120"></canvas></div>
+  <div id="camStatus">Kamera mati</div>
+</div>
+<div id="hand">☝️</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* =================== DATA SOAL =================== */
+const DATA=[
+ {title:"Mengenal Asmaul Husna",qs:[
+  {cat:"LOTS",q:"Asmaul Husna artinya …",opts:["Nama-nama Allah yang baik","Nama-nama buah","Nama-nama hewan","Nama-nama kota"],a:0,why:"Asmaul Husna artinya nama-nama Allah yang baik."},
+  {cat:"MOTS",q:"Berapa jumlah Asmaul Husna?",opts:["9","19","99","199"],a:2,why:"Asmaul Husna ada 99 nama."},
+  {cat:"HOTS",q:"Bu Guru mengajak membaca Asmaul Husna sebelum belajar. Apa yang sebaiknya Adi lakukan?",opts:["Ikut membaca dengan tenang","Bermain sendiri","Mengobrol dengan keras","Menutup telinga"],a:0,why:"Kita membaca Asmaul Husna dengan tenang dan sopan."}
+ ]},
+ {title:"Ar-Rahman & Ar-Rahim",qs:[
+  {cat:"LOTS",q:"Ar-Rahim artinya …",opts:["Maha Penyayang","Maha Pencipta","Maha Melihat","Maha Mendengar"],a:0,why:"Ar-Rahim artinya Maha Penyayang."},
+  {cat:"MOTS",q:"Allah memberi kita udara, air, dan makanan tanpa kita minta. Allah bersifat …",opts:["Ar-Rahman (Maha Pengasih)","As-Sami' (Maha Mendengar)","Al-Bashir (Maha Melihat)","Al-Ghaffar (Maha Pengampun)"],a:0,why:"Ar-Rahman artinya Maha Pengasih."},
+  {cat:"HOTS",q:"Kita ingin meniru sifat Allah Ar-Rahim (Maha Penyayang). Apa yang bisa kita lakukan?",opts:["Menyayangi adik dan teman","Mengambil mainan teman","Marah kepada adik","Tidak peduli teman yang sakit"],a:0,why:"Meniru Ar-Rahim berarti kita menyayangi sesama."}
+ ]},
+ {title:"Al-Khaliq & Ar-Razzaq",qs:[
+  {cat:"LOTS",q:"Al-Khaliq artinya …",opts:["Maha Pencipta","Maha Pengampun","Maha Mengetahui","Maha Pemberi Rezeki"],a:0,why:"Al-Khaliq artinya Maha Pencipta."},
+  {cat:"MOTS",q:"Allah memberi kita rezeki seperti makanan dan minuman. Nama Allah yang tepat adalah …",opts:["Ar-Razzaq (Maha Pemberi Rezeki)","Al-Ghaffar (Maha Pengampun)","As-Sami' (Maha Mendengar)","Al-Bashir (Maha Melihat)"],a:0,why:"Ar-Razzaq artinya Maha Pemberi Rezeki."},
+  {cat:"HOTS",q:"Ani melihat bunga, burung, dan pelangi yang indah. Apa yang sebaiknya Ani ucapkan?",opts:["Subhanallah, Allah Maha Pencipta","Aku yang membuatnya","Biasa saja","Aku mau memetik semua bunga"],a:0,why:"Kita bersyukur dan memuji Allah Al-Khaliq, Sang Pencipta."}
+ ]},
+ {title:"As-Sami' & Al-Bashir",qs:[
+  {cat:"LOTS",q:"Al-Bashir artinya …",opts:["Maha Melihat","Maha Mendengar","Maha Pemberi","Maha Pengampun"],a:0,why:"Al-Bashir artinya Maha Melihat."},
+  {cat:"MOTS",q:"Rina berdoa dengan suara pelan. Allah tetap mendengar karena Allah bersifat …",opts:["As-Sami' (Maha Mendengar)","Al-Khaliq (Maha Pencipta)","Ar-Razzaq (Maha Pemberi Rezeki)","Al-Ghaffar (Maha Pengampun)"],a:0,why:"As-Sami' artinya Maha Mendengar, bahkan doa yang pelan."},
+  {cat:"HOTS",q:"Budi sendirian di kelas dan menemukan uang jatuh milik temannya. Budi ingat Allah Maha Melihat. Apa yang Budi lakukan?",opts:["Mengembalikan uang kepada pemiliknya","Mengambil uang itu","Menyembunyikan uang itu","Membuang uang itu"],a:0,why:"Allah Al-Bashir selalu melihat, jadi kita harus jujur."}
+ ]},
+ {title:"Al-Ghaffar & Meneladani Asmaul Husna",qs:[
+  {cat:"LOTS",q:"Al-Ghaffar artinya …",opts:["Maha Pengampun","Maha Penyayang","Maha Melihat","Maha Mendengar"],a:0,why:"Al-Ghaffar artinya Maha Pengampun."},
+  {cat:"MOTS",q:"Doni berbuat salah lalu menyesal. Apa yang sebaiknya Doni lakukan?",opts:["Minta maaf dan memohon ampun kepada Allah","Menyalahkan teman","Berbohong","Diam saja dan mengulanginya"],a:0,why:"Allah Al-Ghaffar mengampuni hamba yang menyesal dan bertobat."},
+  {cat:"HOTS",q:"Pilih sikap yang paling menunjukkan kita meneladani Asmaul Husna!",opts:["Menolong teman dan memaafkan kesalahannya","Marah dan membalas teman","Pelit membagi bekal","Mengejek teman"],a:0,why:"Menolong dan memaafkan adalah meneladani sifat-sifat baik Allah."}
+ ]}
+];
+const RECAP=[["Ar-Rahman","Maha Pengasih"],["Ar-Rahim","Maha Penyayang"],["Al-Khaliq","Maha Pencipta"],["Ar-Razzaq","Maha Pemberi Rezeki"],["As-Sami'","Maha Mendengar"],["Al-Bashir","Maha Melihat"],["Al-Ghaffar","Maha Pengampun"]];
+const PALETTE=[["#ff9a9a","#ee3b4a","#b81e35"],["#ffb773","#ff7a1a","#c94f00"],["#ffe06b","#f0a000","#a86500"],["#6fe3ae","#18b36b","#0b7a47"],["#8ecbff","#2f8cf0","#1459b3"],["#cfa8ff","#8a4be8","#5a25a8"],["#ffa8d6","#ff4fa3","#b81f70"]];
+const BASE={LOTS:10,MOTS:15,HOTS:20}, TIME={LOTS:40,MOTS:50,HOTS:60};
+const CATNAME={LOTS:"Mengingat",MOTS:"Memahami",HOTS:"Menalar"};
+const QPL=3, NL=DATA.length, TOTALQ=NL*QPL;
+const BESTKEY="balloonpop_asmaulhusna_best";
+
+/* =================== STATE =================== */
+const S={name:"",mode:"mouse",level:0,qi:0,score:0,firstTry:0,lvFirst:0,done:0,wrong:0,sound:true,locked:true,balloons:[],timerId:null,deadline:0,timeLeft:0,timeTotal:1,lastBeep:null,stageW:0,stageH:0,cur:null,levelsDone:0};
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function toast(t,ms=3500){const e=$("#toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show"),ms)}
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));$("#nav").classList.toggle("show",id==="sGame")}
+
+/* =================== AUDIO =================== */
+let AC=null;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==="suspended")AC.resume();return AC}
+function tone(f,d=.15,type="sine",vol=.2,delay=0,slide=null){
+ if(!S.sound)return;const c=ac();if(!c)return;const t=c.currentTime+delay;
+ const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);
+ if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.03)}
+function noise(d=.12,vol=.4){
+ if(!S.sound)return;const c=ac();if(!c)return;const n=Math.floor(c.sampleRate*d);
+ const buf=c.createBuffer(1,n,c.sampleRate),data=buf.getChannelData(0);
+ for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*(1-i/n);
+ const s=c.createBufferSource();s.buffer=buf;const g=c.createGain();g.gain.value=vol;s.connect(g);g.connect(c.destination);s.start()}
+const SFX={
+ pop(){noise(.12,.5);tone(700,.12,"triangle",.2,0,140)},
+ good(){[523,659,784,1046].forEach((f,i)=>tone(f,.2,"triangle",.22,i*.08))},
+ bad(){tone(240,.32,"sawtooth",.14,0,110)},
+ level(){[523,659,784,659,784,1046,1318].forEach((f,i)=>tone(f,.22,"triangle",.22,i*.1))},
+ tick(){tone(900,.05,"square",.05)},
+ click(){tone(700,.05,"sine",.12)}
+};
+document.addEventListener("pointerdown",()=>ac(),{once:true});
+$("#btnSound").onclick=()=>{S.sound=!S.sound;$("#btnSound").textContent=S.sound?"🔊":"🔇";if(S.sound)SFX.click()};
+
+/* =================== PARTIKEL =================== */
+const fx=$("#fx"),fctx=fx.getContext("2d");let parts=[];
+function sizeFx(){const d=Math.min(window.devicePixelRatio||1,2);fx.width=innerWidth*d;fx.height=innerHeight*d;fctx.setTransform(d,0,0,d,0,0)}
+function burst(x,y,colors,n=36,power=1){
+ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,sp=(2+Math.random()*7)*power,r=Math.random();
+  parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,g:.22,life:1,decay:.012+Math.random()*.015,size:5+Math.random()*9,color:colors[i%colors.length],shape:r<.25?"star":r<.6?"rect":"circle",rot:Math.random()*6,vr:(Math.random()-.5)*.4})}}
+function confetti(n=90){
+ const cols=["#ff4f6d","#ff8a1a","#ffd04d","#35d98a","#2f8cf0","#8a4be8","#ff4fa3"];
+ for(let i=0;i<n;i++)parts.push({x:Math.random()*innerWidth,y:-20-Math.random()*300,vx:(Math.random()-.5)*3,vy:1.5+Math.random()*3,g:.04,life:1,decay:.0035,size:6+Math.random()*8,color:cols[i%cols.length],shape:Math.random()<.2?"star":"rect",rot:Math.random()*6,vr:(Math.random()-.5)*.3})}
+function drawFx(){
+ fctx.clearRect(0,0,innerWidth,innerHeight);if(!parts.length)return;
+ for(const p of parts){p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.rot+=p.vr;p.life-=p.decay;
+  fctx.save();fctx.globalAlpha=clamp(p.life,0,1);fctx.translate(p.x,p.y);fctx.rotate(p.rot);fctx.fillStyle=p.color;
+  if(p.shape==="circle"){fctx.beginPath();fctx.arc(0,0,p.size/2,0,7);fctx.fill()}
+  else if(p.shape==="rect"){fctx.fillRect(-p.size/2,-p.size/3,p.size,p.size*.66)}
+  else{fctx.font=(p.size*2)+"px sans-serif";fctx.textAlign="center";fctx.textBaseline="middle";fctx.fillText("★",0,0)}
+  fctx.restore()}
+ parts=parts.filter(p=>p.life>0&&p.y<innerHeight+40)}
+function ring(x,y,color){const e=document.createElement("div");e.className="ring";e.style.left=x+"px";e.style.top=y+"px";e.style.borderColor=color;document.body.appendChild(e);setTimeout(()=>e.remove(),600)}
+function floatText(x,y,text,color){const e=document.createElement("div");e.className="floatpts";e.style.left=x+"px";e.style.top=y+"px";e.style.color=color;e.textContent=text;document.body.appendChild(e);setTimeout(()=>e.remove(),1250)}
+
+/* ambient sparkles */
+(function(){const bg=$("#bg");for(let i=0;i<16;i++){const s=document.createElement("div");s.className="spark";const z=4+Math.random()*9;s.style.cssText=`left:${Math.random()*100}%;width:${z}px;height:${z}px;animation-duration:${9+Math.random()*12}s;animation-delay:${-Math.random()*20}s`;bg.appendChild(s)}})();
+
+/* =================== BALON =================== */
+const stage=$("#stage");
+function clearBalloons(){S.balloons.forEach(b=>b.el.remove());S.balloons=[];stage.querySelectorAll(".balloon").forEach(e=>e.remove())}
+function spawnBalloons(q){
+ clearBalloons();
+ const order=shuffle(q.opts.map((t,i)=>({t,ok:i===q.a})));
+ const pal=shuffle(PALETTE.slice());
+ order.forEach((o,i)=>{
+  const c=pal[i%pal.length];
+  const el=document.createElement("div");el.className="balloon";
+  el.style.setProperty("--c1",c[0]);el.style.setProperty("--c2",c[1]);el.style.setProperty("--c3",c[2]);
+  el.innerHTML='<div class="body"><span class="txt"></span></div><div class="knot"></div><div class="string"></div>';
+  el.querySelector(".txt").textContent=o.t;
+  const b={el,body:el.querySelector(".body"),txt:el.querySelector(".txt"),text:o.t,ok:o.ok,dead:false,colors:c,
+   home:{x:0,y:0},w:120,h:144,px:Math.random()*6.28,py:Math.random()*6.28,sx:.5+Math.random()*.5,sy:.8+Math.random()*.7,ax:0,ay:0,
+   born:performance.now()/1000+i*.12,leaving:false,leave:0};
+  el.addEventListener("pointerdown",e=>{e.preventDefault();onPick(b)});
+  stage.appendChild(el);S.balloons.push(b)});
+ layout()}
+function layout(){
+ const r=stage.getBoundingClientRect();S.stageW=r.width;S.stageH=r.height;
+ const n=S.balloons.length;if(!n)return;
+ const cols=r.width<700?2:n,rows=Math.ceil(n/cols);
+ const cw=r.width/cols,ch=r.height/rows;
+ const w=clamp(Math.min(cw*.88,235,(ch*.74)/1.2),80,235),h=w*1.2;
+ S.balloons.forEach((b,i)=>{
+  const row=Math.floor(i/cols),col=i%cols,inRow=Math.min(cols,n-row*cols),off=(cols-inRow)*cw/2;
+  b.w=w;b.h=h;b.el.style.width=w+"px";b.el.style.height=h+"px";
+  b.home.x=off+col*cw+cw/2;b.home.y=row*ch+ch*.46+(i%2?ch*.04:-ch*.04);
+  b.ax=cw*.035;b.ay=Math.max(8,ch*.07);
+  const len=b.text.length,k=len<=12?.16:len<=24?.125:len<=40?.1:.085;
+  b.txt.style.fontSize=Math.max(11,w*k)+"px"})}
+window.addEventListener("resize",()=>{sizeFx();layout()});
+function animateBalloons(t,dt){
+ for(const b of S.balloons){
+  const e=clamp((t-b.born)/1.1,0,1),ease=1-Math.pow(1-e,3);
+  const x=b.home.x+Math.sin(t*b.sx+b.px)*b.ax;
+  let y=b.home.y+Math.sin(t*b.sy+b.py)*b.ay+(1-ease)*(S.stageH-b.home.y+b.h);
+  if(b.leaving){b.leave+=dt*500*(1+b.leave/300);y-=b.leave}
+  b.el.style.transform=`translate3d(${x-b.w/2}px,${y-b.h/2}px,0) rotate(${Math.sin(t*b.sx*.8+b.px)*4}deg)`}}
+function hitTest(px,py){
+ let best=null,bd=1e9;
+ for(const b of S.balloons){if(b.dead||b.leaving)continue;
+  const r=b.body.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  const dx=(px-cx)/(r.width/2*1.12),dy=(py-cy)/(r.height/2*1.12),d=dx*dx+dy*dy;
+  if(d<=1&&d<bd){bd=d;best=b}}
+ return best}
+function setHover(b){S.balloons.forEach(x=>x.el.classList.toggle("hover",x===b))}
+
+/* =================== UI HELPERS =================== */
+function setFb(type,html){const f=$("#fb");f.className="fb "+type+(html?" show":"");f.innerHTML=html||""}
+function updateNav(){$("#nName").textContent=S.name;$("#nLevel").textContent=S.level+1;$("#nScore").textContent=S.score}
+function updateProgress(){
+ $("#pbar").style.width=(S.done/TOTALQ*100)+"%";
+ $("#pText").textContent=`Soal ${Math.min(S.done+1,TOTALQ)} dari ${TOTALQ}`;
+ $("#dots").innerHTML=Array.from({length:NL},(_,i)=>`<i class="dot ${i<S.level?"done":i===S.level?"cur":""}"></i>`).join("")}
+function updateTimerUI(left){
+ $("#nTime").textContent=Math.ceil(left);
+ const low=left<=8;$("#chipTime").classList.toggle("low",low);$("#tfill").classList.toggle("low",low);
+ $("#tfill").style.width=(left/S.timeTotal*100)+"%"}
+function stopTimer(){clearInterval(S.timerId);S.timerId=null}
+function startTimer(sec){
+ stopTimer();S.timeTotal=sec;S.deadline=performance.now()+sec*1000;S.lastBeep=null;updateTimerUI(sec);
+ S.timerId=setInterval(()=>{
+  const left=Math.max(0,(S.deadline-performance.now())/1000);S.timeLeft=left;updateTimerUI(left);
+  if(left>0&&left<=5&&Math.ceil(left)!==S.lastBeep){S.lastBeep=Math.ceil(left);SFX.tick()}
+  if(left<=0){stopTimer();onTimeout()}},100)}
+function addScore(n){S.score+=n;updateNav()}
+
+/* =================== ALUR GAME =================== */
+function resetStats(){S.level=0;S.qi=0;S.score=0;S.firstTry=0;S.lvFirst=0;S.done=0;S.levelsDone=0}
+function beginGame(mode){
+ S.mode=mode;document.body.classList.toggle("cam",mode==="cam");
+ $("#hint").textContent=mode==="cam"?"☝️ Arahkan jari ke balon, lalu 🤏 cubit untuk memecahkan":"🖱️ Klik atau sentuh balon jawaban yang benar";
+ resetStats();updateNav();show("sGame");startLevel()}
+function startLevel(){
+ S.qi=0;S.lvFirst=0;S.locked=true;clearBalloons();setFb("info","");updateNav();updateProgress();
+ $("#bnLevel").textContent="LEVEL "+(S.level+1);$("#bnTitle").textContent=DATA[S.level].title;
+ $("#ovBanner").classList.add("show");SFX.level();
+ setTimeout(()=>{$("#ovBanner").classList.remove("show");loadQuestion()},2000)}
+function loadQuestion(){
+ const q=DATA[S.level].qs[S.qi];S.wrong=0;
+ $("#qBadge").textContent=q.cat;$("#qBadge").className="badge "+q.cat;
+ $("#qNum").textContent=`Soal ${S.qi+1}/${QPL} • ${CATNAME[q.cat]}`;$("#qTopic").textContent="";
+ $("#qText").textContent=q.q;setFb("info","");updateProgress();
+ requestAnimationFrame(()=>{spawnBalloons(q);S.locked=false;startTimer(TIME[q.cat])})}
+function curQ(){return DATA[S.level].qs[S.qi]}
+
+function onPick(b){
+ if(S.locked||b.dead||b.leaving)return;
+ const q=curQ();
+ if(b.ok){
+  S.locked=true;stopTimer();
+  const base=BASE[q.cat];
+  const pts=Math.max(Math.ceil(base/2),base-S.wrong*5)+Math.round(S.timeLeft/S.timeTotal*5);
+  if(S.wrong===0){S.firstTry++;S.lvFirst++}
+  addScore(pts);S.done++;updateProgress();
+  const r=b.body.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  burst(x,y,[b.colors[0],b.colors[1],"#fff","#ffe45c"],50,1.15);ring(x,y,b.colors[1]);
+  floatText(x,y,"+"+pts,"#18b36b");SFX.pop();setTimeout(()=>SFX.good(),120);
+  b.el.remove();S.balloons=S.balloons.filter(z=>z!==b);
+  S.balloons.forEach(z=>{z.leaving=true;z.el.style.transition="opacity .8s";z.el.style.opacity="0"});
+  setFb("good",`🎉 <span><b>Benar!</b> ${q.why}</span>`);
+  setTimeout(nextStep,2600)
+ }else{
+  b.dead=true;S.wrong++;b.el.classList.add("dead");
+  const r=b.body.getBoundingClientRect();
+  burst(r.left+r.width/2,r.top+r.height/2,["#999","#bbb","#777"],14,.6);SFX.bad();
+  setFb("bad","🙈 <span><b>Belum tepat.</b> Ayo coba balon yang lain!</span>")}}
+function onTimeout(){
+ if(S.locked)return;S.locked=true;S.done++;updateProgress();
+ const q=curQ();const ok=S.balloons.find(b=>b.ok);if(ok)ok.el.classList.add("reveal");
+ SFX.bad();setFb("info",`⏰ <span><b>Waktu habis.</b> ${q.why}</span>`);
+ setTimeout(nextStep,3400)}
+function nextStep(){
+ S.qi++;
+ if(S.qi>=QPL)levelDone();else loadQuestion()}
+function levelDone(){
+ S.levelsDone++;clearBalloons();
+ if(S.level>=NL-1){endGame();return}
+ const st=S.lvFirst>=3?3:S.lvFirst>=2?2:1;
+ $("#lvTitle").textContent=`Level ${S.level+1} Selesai!`;
+ $("#lvStars").innerHTML=[1,2,3].map(i=>`<span class="${i<=st?"":"off"}">⭐</span>`).join("");
+ $("#lvMsg").textContent=st===3?"Sempurna! Kamu hebat sekali! 🌟":st===2?"Bagus sekali! Terus semangat! 👏":"Kamu sudah berusaha, ayo lanjut! 💪";
+ $("#btnNext").textContent=`Lanjut ke Level ${S.level+2} ➜`;
+ $("#ovLevel").classList.add("show");SFX.level();confetti(50)}
+$("#btnNext").onclick=()=>{$("#ovLevel").classList.remove("show");S.level++;startLevel()};
+
+function endGame(){
+ stopTimer();show("sEnd");
+ let best=0;try{best=+localStorage.getItem(BESTKEY)||0}catch(e){}
+ if(S.score>best){best=S.score;try{localStorage.setItem(BESTKEY,best)}catch(e){}}
+ const pct=S.firstTry/TOTALQ,st=pct>=.85?3:pct>=.6?2:1;
+ $("#endTitle").textContent=`Selamat, ${S.name}!`;
+ $("#endStars").innerHTML=[1,2,3].map(i=>`<span class="${i<=st?"":"off"}">⭐</span>`).join("");
+ $("#endScore").textContent=S.score;$("#endFirst").textContent=`${S.firstTry}/${TOTALQ}`;$("#endLv").textContent=`${S.levelsDone}/${NL}`;$("#endBest").textContent=best;
+ $("#endMsg").textContent=pct>=.85?"Luar biasa! Kamu anak pintar yang mengenal Asmaul Husna dengan sangat baik! 🏅":pct>=.6?"Hebat! Kamu sudah mengenal Asmaul Husna. Ayo terus belajar! 🎉":"Terima kasih sudah bermain! Ayo main lagi supaya makin hafal Asmaul Husna. 💪";
+ $("#recap").innerHTML=RECAP.map(r=>`<span>${r[0]} = ${r[1]}</span>`).join("");
+ SFX.level();confetti(120);setTimeout(()=>confetti(80),1200);setTimeout(()=>confetti(60),2600)}
+$("#btnAgain").onclick=()=>{SFX.click();beginGame(S.mode)};
+$("#btnChange").onclick=()=>{SFX.click();stopCamera();document.body.classList.remove("cam");show("sStart");$("#inName").focus()};
+
+/* =================== START / IZIN KAMERA =================== */
+function getName(){
+ const v=$("#inName").value.trim();
+ if(!v){const f=$("#inName");f.classList.remove("err");void f.offsetWidth;f.classList.add("err");f.focus();toast("Tulis namamu dulu ya 😊",2200);return null}
+ S.name=v;return v}
+$("#btnMouse").onclick=()=>{if(!getName())return;SFX.click();beginGame("mouse")};
+$("#btnCam").onclick=()=>{if(!getName())return;SFX.click();$("#ovConsent").classList.add("show")};
+$("#btnDeny").onclick=()=>{$("#ovConsent").classList.remove("show");beginGame("mouse")};
+$("#btnAllow").onclick=async()=>{
+ $("#ovConsent").classList.remove("show");
+ const ok=await startCamera();
+ beginGame(ok?"cam":"mouse")};
+$("#inName").addEventListener("keydown",e=>{if(e.key==="Enter")$("#btnMouse").click()});
+
+/* =================== KAMERA + MEDIAPIPE HANDS =================== */
+const cam={on:false,stream:null,hands:null,busy:false,lastSeen:0,pinched:false,lastClick:0,target:{x:0,y:0},ready:false};
+const video=$("#cam"),camDots=$("#camDots"),dctx=camDots.getContext("2d"),handEl=$("#hand");
+const MP="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/";
+function camStatus(t){$("#camStatus").textContent=t}
+function loadScript(src){return new Promise((res,rej)=>{if(window.Hands)return res();const s=document.createElement("script");s.src=src;s.crossOrigin="anonymous";s.onload=res;s.onerror=()=>rej(new Error("gagal memuat"));document.head.appendChild(s)})}
+async function startCamera(){
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Browser ini tidak mendukung kamera. Memakai mode mouse/sentuh.",5000);return false}
+ $("#camBox").classList.add("show");camStatus("Meminta izin kamera…");
+ try{cam.stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:640},height:{ideal:480},facingMode:"user"},audio:false})}
+ catch(e){$("#camBox").classList.remove("show");toast("Kamera tidak diizinkan atau tidak ditemukan. Memakai mode mouse/sentuh.",5500);return false}
+ video.srcObject=cam.stream;try{await video.play()}catch(e){}
+ camStatus("Memuat pengenal tangan…");
+ try{
+  await loadScript(MP+"hands.js");
+  if(!cam.hands){
+   cam.hands=new Hands({locateFile:f=>MP+f});
+   cam.hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:.6,minTrackingConfidence:.5});
+   cam.hands.onResults(onHands);await cam.hands.initialize()}
+ }catch(e){stopCamera();toast("Gagal memuat pengenal tangan (butuh internet). Memakai mode mouse/sentuh.",6000);return false}
+ cam.on=true;cam.cur=null;camStatus("✋ Tunjukkan tanganmu");camLoop();return true}
+function stopCamera(){
+ cam.on=false;if(cam.stream){cam.stream.getTracks().forEach(t=>t.stop());cam.stream=null}
+ video.srcObject=null;$("#camBox").classList.remove("show");handEl.style.display="none";setHover(null)}
+async function camLoop(){
+ if(!cam.on)return;
+ if(!cam.busy&&video.readyState>=2){cam.busy=true;try{await cam.hands.send({image:video})}catch(e){}cam.busy=false}
+ requestAnimationFrame(camLoop)}
+function dist(a,b){return Math.hypot((a.x-b.x)*1.33,a.y-b.y)}
+function onHands(r){
+ dctx.clearRect(0,0,camDots.width,camDots.height);
+ const L=r.multiHandLandmarks&&r.multiHandLandmarks[0];
+ if(!L){camStatus("✋ Tunjukkan tanganmu");return}
+ cam.lastSeen=performance.now();
+ L.forEach((p,i)=>{dctx.fillStyle=(i===4||i===8)?"#ff4fa3":"#7fe3ff";dctx.beginPath();dctx.arc(p.x*camDots.width,p.y*camDots.height,(i===4||i===8)?5:3,0,7);dctx.fill()});
+ const ratio=dist(L[4],L[8])/Math.max(.001,dist(L[0],L[9]));
+ // posisi penunjuk: ujung telunjuk (dibekukan saat jari mulai menutup agar tidak bergeser)
+ if(ratio>=.4||!cam.ready){
+  const nx=clamp((1-L[8].x-.12)/.76,0,1),ny=clamp((L[8].y-.1)/.7,0,1);
+  cam.target.x=nx*innerWidth;cam.target.y=ny*innerHeight;cam.ready=true}
+ if(!cam.cur)cam.cur={x:cam.target.x,y:cam.target.y};
+ else{cam.cur.x+=(cam.target.x-cam.cur.x)*.5;cam.cur.y+=(cam.target.y-cam.cur.y)*.5}
+ handEl.style.display="flex";handEl.style.transform=`translate(${cam.cur.x-29}px,${cam.cur.y-29}px)`;
+ setHover(hitTest(cam.cur.x,cam.cur.y));
+ if(!cam.pinched&&ratio<.2){
+  cam.pinched=true;handEl.classList.add("pinch");handEl.textContent="🤏";camStatus("🤏 Cubit!");
+  const now=performance.now();
+  if(now-cam.lastClick>500){cam.lastClick=now;clickAt(cam.cur.x,cam.cur.y)}
+ }else if(cam.pinched&&ratio>.4){cam.pinched=false;handEl.classList.remove("pinch");handEl.textContent="☝️";camStatus("✋ Tangan terdeteksi")}
+ else if(!cam.pinched)camStatus("✋ Tangan terdeteksi")}
+function clickAt(x,y){
+ const b=hitTest(x,y);if(b){onPick(b);return}
+ const el=document.elementFromPoint(x,y),btn=el&&el.closest&&el.closest("button");
+ if(btn&&!btn.disabled)btn.click()}
+window.addEventListener("beforeunload",stopCamera);
+
+/* =================== LOOP UTAMA =================== */
+let last=performance.now();
+function frame(now){
+ const dt=Math.min(.05,(now-last)/1000);last=now;
+ animateBalloons(now/1000,dt);drawFx();
+ if(cam.on&&handEl.style.display==="flex"&&performance.now()-cam.lastSeen>600){handEl.style.display="none";setHover(null);cam.cur=null;cam.pinched=false;cam.ready=false}
+ requestAnimationFrame(frame)}
+sizeFx();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
